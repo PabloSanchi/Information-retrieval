@@ -17,7 +17,6 @@ public class Calc {
 
     public HashMap<String, Pair<Double, HashMap<String, Double>>> invIndex = new HashMap<String, Pair<Double, HashMap<String, Double>>>();
     public HashMap<String, Double> docLong = new HashMap<String, Double>();
-    private Set<String> stopWords = new HashSet<String>();
 
     public void loadData() throws Exception {
         Gson gson = new Gson();
@@ -29,83 +28,25 @@ public class Calc {
         invIndex = gson.fromJson(reader, type);
     }
 
-    /**
-     * @description remove special characters
-     *
-     * @param data {String}
-     * @return String
-     */
-    public String characterPreprocess(String data) {
-
-        FilterManager fM = new FilterManager();
-        fM.addFilter(new FilterAllBraces());
-        fM.addFilter(new FilterAllDotsAndCommas());
-        fM.addFilter(new FilterAllMarks());
-        fM.addFilter(new FilterAtAndHashSign());
-        fM.addFilter(new FilterApostrophe());
-        fM.addFilter(new FilterAsterisk());
-        fM.addFilter(new FilterDashAndSlash());
-        fM.addFilter(new FilterNumbers());
-        fM.addFilter(new FilterSpaces());
-
-        return fM.execute(data.toLowerCase());
-    }
-
-    /**
-     *
-     * @param terms {ArratList<String>}
-     * @return {ArrayList<String>}
-     */
-    public ArrayList<String> removeStopWords(ArrayList<String> terms) {
-        ArrayList<String> vTerm = new ArrayList<String>();
-
-        for(String term : terms) {
-            if(!stopWords.contains(term) && !Objects.equals(term, "")) vTerm.add(term);
-        }
-
-        return vTerm;
-    }
-
-    /**
-     * @description initialize and create the stop words set
-     */
-    public void createStopWordsSet() {
-        try {
-
-            File obj = new File("./stopwords.txt");
-            Scanner file = new Scanner(obj);
-
-            while (file.hasNextLine()) {
-                String line = file.nextLine();
-                line = line.replaceAll("'", "");
-                stopWords.add(line);
-            }
-            file.close();
-        } catch (Exception e) {}
-
-        System.out.println("Size of stopwords is: " + stopWords.size());
-    }
-
-    public ArrayList<String> filterQuery(String query) {
-        query = characterPreprocess(query);
-        ArrayList<String> vTerm = new ArrayList<String>(Arrays.asList(query.split("\\s")));
-        return removeStopWords(vTerm);
-    }
-
     public HashMap<String, Double> getDocs(ArrayList<String> vTerm) {
         HashMap<String, Double> ranking = new HashMap<String, Double>();
 
-        for(String term : invIndex.keySet()) {
+        for(Map.Entry<String, Pair<Double, HashMap<String, Double>>> entry : invIndex.entrySet()) {
+            String term = entry.getKey();
             if(vTerm.contains(term)) {
-                double idf = invIndex.get(term).getFirst();
-                for(String file : invIndex.get(term).getSecond().keySet()) {
-                    double num = 0;
-                    if(ranking.containsKey(file)) {
-                        num = ranking.get(file) + invIndex.get(term).getSecond().get(file) * Math.pow(idf, 2);
-                    }else {
-                        num = invIndex.get(term).getSecond().get(file) * idf * idf;
-                    }
-                    ranking.put(file, num);
+                Pair<Double, HashMap<String, Double>> pair = entry.getValue();
+                double idf = pair.getFirst();
+
+                for(Map.Entry<String, Double> docEntry : pair.getSecond().entrySet() ) {
+                    String file = docEntry.getKey();
+                    double temp;
+
+                    if(ranking.containsKey(file))
+                        temp = ranking.get(file) + invIndex.get(term).getSecond().get(file) * Math.pow(idf, 2);
+                    else
+                        temp = invIndex.get(term).getSecond().get(file) * idf * idf;
+
+                    ranking.put(file, temp);
                 }
             }
         }
@@ -118,7 +59,9 @@ public class Calc {
     }
 
     public HashMap<String, Double> sortDocs(HashMap<String, Double> ranking) {
-        return ranking.entrySet().stream().sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+        return ranking.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue(Collections.reverseOrder()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
     }
 }
