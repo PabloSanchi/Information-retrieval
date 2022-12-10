@@ -58,8 +58,6 @@ public class TextProcessor {
             }
             file.close(); 
         } catch (Exception e) {}
-
-        System.out.println("Size of stopwords is: " + stopWords.size());
     }
 
     /**
