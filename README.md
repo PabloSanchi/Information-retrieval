@@ -1,4 +1,8 @@
 # RECINF - CRAWLER
+El fichero corpus debe ir en el directorio raiz del proyecto:
+```php
+/RecInformacion/corpus
+```
 ## Indexer schema
 ### Step 1
 - Char Preprocessing
@@ -19,7 +23,7 @@
 - Calc of the doc length
 ### Step 6
 - Inverted index creation
-## Recovery schema
+## Retrieval schema
 ### Step 1
 - Char Preprocessing
     - Punctuation symbols
